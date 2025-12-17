@@ -1,21 +1,17 @@
 {
-  "name": "youtube-extractor-backend",
+  "name": "youtube-audio-extractor",
   "version": "1.0.0",
-  "description": "Backend para extracción de audio de YouTube",
+  "description": "Extractor de audio para Flutter",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js" 
   },
-  "keywords": [
-    "node",
-    "express",
-    "youtube"
-  ],
-  "author": "",
-  "license": "ISC",
   "dependencies": {
-    "cors": "^2.8.5",
     "express": "^4.19.2",
-    "ytdl-core": "^4.11.5"
+    "ytdl-core": "^4.11.5", 
+    "cors": "^2.8.5"
+  },
+  "engines": {
+    "node": ">=18.x"
   }
 }
