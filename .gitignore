@@ -1,1 +1,26 @@
-node_modules/
+# Dependencias
+/node_modules
+/.pnp
+.pnp.js
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.log
+
+# Directorios de compilación
+/dist
+/build
+.serverless
+
+# Archivos de configuración locales
+.env
+.env.*
+.DS_Store
+
+# IDEs y Editores
+.vscode
+.idea
+*.sublime-workspace
