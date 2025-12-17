@@ -22,14 +22,16 @@ app.get('/test', (req, res) => {
 
 
 // 🔑 ENDPOINT PRINCIPAL: /extract
+// 🔑 ENDPOINT PRINCIPAL: /extract
 app.get('/extract', async (req, res) => {
-    // El videoId se obtiene de la URL, ejemplo: /extract?videoId=dQw4w9WgXcQ
-    const videoId = req.query.videoId; 
-    console.log(`[LOG 1] Petición recibida para videoId: ${videoId}`);
-
-    if (!videoId) {
-        return res.status(400).json({ error: 'Falta el parámetro videoId.' });
+    let videoId = req.query.videoId; 
+    
+    // 💡 SOLUCIÓN: Sanitizamos el videoId para eliminar cualquier carácter no deseado.
+    if (videoId) {
+        videoId = videoId.split(']')[0].split(')')[0].trim();
     }
+    
+    console.log(`[LOG 1] Petición recibida para videoId: ${videoId}`);
 
     try {
         // 1. Obtener información de YouTube
@@ -69,4 +71,5 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Servidor de extracción de audio corriendo en puerto ${PORT}`);
 });
+
 
