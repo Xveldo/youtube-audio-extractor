@@ -1,40 +1,30 @@
 const express = require('express');
-const ytdl = require('ytdl-core');
+// 💡 CAMBIAMOS: Importamos la nueva librería
+const ytdl = require('ytdl-core-muxer'); 
 const cors = require('cors');
 
 const app = express();
 
-// 🚨 CRÍTICO 1: Configuración de CORS
-// Permite que tu aplicación Flutter (cualquier origen) acceda a esta API.
-app.use(cors({
-    origin: '*',
-}));
+// ... (Todas tus definiciones de CORS y app.get('/', '/test') se quedan igual) ...
 
-// Ruta de bienvenida o base (si alguien accede a la URL principal)
-app.get('/', (req, res) => {
-    res.send('Servidor de Extracción de Audio ACTIVO y esperando peticiones en /extract.');
-});
-
-// Ruta de prueba para confirmar que Express está ejecutándose
-app.get('/test', (req, res) => {
-    res.status(200).json({ status: 'OK', message: 'Servidor Express está vivo y la ruta /test funciona.' });
-});
-
-
-// 🔑 ENDPOINT PRINCIPAL: /extract
 // 🔑 ENDPOINT PRINCIPAL: /extract
 app.get('/extract', async (req, res) => {
     let videoId = req.query.videoId; 
     
-    // 💡 SOLUCIÓN: Sanitizamos el videoId para eliminar cualquier carácter no deseado.
+    // Sanitización del ID (¡sigue siendo importante!)
     if (videoId) {
         videoId = videoId.split(']')[0].split(')')[0].trim();
     }
     
     console.log(`[LOG 1] Petición recibida para videoId: ${videoId}`);
 
+    if (!videoId) {
+        return res.status(400).json({ error: 'Falta el parámetro videoId.' });
+    }
+
     try {
         // 1. Obtener información de YouTube
+        // NOTA: Con la nueva librería, la API es casi idéntica
         const info = await ytdl.getInfo(videoId);
         console.log('[LOG 2] Información de YouTube obtenida.');
         
@@ -49,7 +39,7 @@ app.get('/extract', async (req, res) => {
             return res.status(404).json({ error: 'No se encontró un stream de audio válido.' });
         }
         
-        // 🚨 CRÍTICO 2: Devolver la URL con la clave 'audioUrl' que Flutter espera
+        // 🚨 Devolver la URL
         console.log('[LOG 4] URL de audio encontrada. Enviando al cliente.');
         res.status(200).json({
             audioUrl: audioFormat.url, 
@@ -57,9 +47,8 @@ app.get('/extract', async (req, res) => {
         });
 
     } catch (error) {
-        // Captura errores de ytdl-core (video no disponible, ID inválido, etc.)
+        // ... (Manejo de errores se queda igual)
         console.error('[LOG 5] Error Crítico de YTDL:', error.message);
-        // Devolvemos el mensaje de error de YTDL al cliente para depuración
         res.status(500).json({ error: 'Fallo en el servidor: ' + error.message });
     }
 });
@@ -71,5 +60,6 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Servidor de extracción de audio corriendo en puerto ${PORT}`);
 });
+
 
 
