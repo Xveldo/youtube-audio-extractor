@@ -1,56 +1,67 @@
-// server.js - Código del Servidor de Extracción de Audio
-
 const express = require('express');
 const ytdl = require('ytdl-core');
 const cors = require('cors');
 
 const app = express();
-// Puerto de escucha. Node.js escuchará en el puerto 3000
-const PORT = 3000; 
 
-// 1. Configurar Middleware
-// Habilitar CORS para que Flutter pueda conectarse
-app.use(cors());
-app.use(express.json());
+// 🚨 CRÍTICO 1: Configuración de CORS
+// Permite que tu aplicación Flutter (cualquier origen) acceda a esta API.
+app.use(cors({
+    origin: '*',
+}));
 
-// 2. Definir el Endpoint (La ruta que llamará Flutter)
-app.get('/api/get-audio-url', async (req, res) => {
-    // Obtener el ID del video del parámetro de consulta (ej: ?videoId=...)
+// Ruta simple para verificar que el servidor está activo (Prueba de vida)
+app.get('/', (req, res) => {
+    res.send('Servidor de Extracción de Audio ACTIVO.');
+});
+
+// Ruta de prueba para confirmar que Express está ejecutándose
+app.get('/test', (req, res) => {
+    res.status(200).json({ status: 'OK', message: 'Servidor Express está vivo y la ruta funciona.' });
+});
+
+
+// 🔑 ENDPOINT PRINCIPAL: /extract
+app.get('/extract', async (req, res) => {
     const videoId = req.query.videoId;
+    console.log(`[LOG 1] Petición recibida para videoId: ${videoId}`);
 
     if (!videoId) {
-        return res.status(400).send({ error: "El parámetro videoId es requerido." });
+        return res.status(400).json({ error: 'Falta el parámetro videoId.' });
     }
 
     try {
-        // Usar ytdl-core para obtener la URL de streaming
+        // 1. Obtener información de YouTube
         const info = await ytdl.getInfo(videoId);
-
-        // Filtrar para obtener la URL del stream de audio de menor calidad (solo audio)
+        console.log('[LOG 2] Información de YouTube obtenida.');
+        
+        // 2. Filtrar el mejor stream de audio
         const audioFormat = ytdl.chooseFormat(info.formats, { 
-            filter: 'audioonly',
-            quality: 'lowestaudio' 
+            filter: 'audioonly', 
+            quality: 'highestaudio' 
         });
 
-        if (!audioFormat) {
-            return res.status(404).send({ error: "No se encontró un stream de audio disponible." });
+        if (!audioFormat || !audioFormat.url) {
+            console.error('[LOG 3] Error: Formato de audio no encontrado en ytdl.');
+            return res.status(404).json({ error: 'No se encontró un stream de audio válido.' });
         }
         
-        // 3. Responder a la aplicación Flutter con la URL directa
-        return res.json({ 
-            url: audioFormat.url, 
-            title: info.videoDetails.title
+        // 🚨 CRÍTICO 2: Devolver la URL con la clave 'audioUrl' que Flutter espera
+        res.status(200).json({
+            audioUrl: audioFormat.url, 
+            title: info.videoDetails.title,
         });
 
     } catch (error) {
-        console.error(`Error al extraer URL para video ${videoId}:`, error.message);
-        // Devolver un error específico si falla la extracción
-        return res.status(500).send({ error: `Fallo en la extracción: ${error.message}` });
+        // Captura errores de ytdl-core (video no disponible, ID inválido, etc.)
+        console.error('[LOG 4] Error Crítico de YTDL:', error.message);
+        res.status(500).json({ error: 'Fallo en el servidor: ' + error.message });
     }
 });
 
-// 4. Iniciar el servidor
+// 3. Puerto de Escucha (CRÍTICO para OnRender)
+const PORT = process.env.PORT || 3000; 
+
 app.listen(PORT, () => {
-    console.log(`🚀 Servidor de extracción corriendo en http://localhost:${PORT}`);
-    console.log(`URL para Flutter: http://10.0.2.2:${PORT}/api`);
+    console.log(`Servidor iniciado en el puerto ${PORT}`);
 });
